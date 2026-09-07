@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "phenoms"
-version = "0.2.5"
+version = "0.2.6"
 description = "Backbone H-bond network analysis for MD simulations (HDX-MS style)"
 readme = "PYPI_README.md"
 license = { text = "MIT" }
