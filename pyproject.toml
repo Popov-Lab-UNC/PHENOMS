@@ -8,7 +8,7 @@ version = "0.2.5"
 description = "Backbone H-bond network analysis for MD simulations (HDX-MS style)"
 readme = "PYPI_README.md"
 license = { text = "MIT" }
-requires-python = ">=3.8"
+requires-python = ">=3.9,<3.14"
 authors = [{ name = "Brandon Novy", email = "bcnovy96@gmail.com" }]
 keywords = ["molecular-dynamics", "hydrogen-bonds", "HDX-MS", "backbone"]
 classifiers = [
