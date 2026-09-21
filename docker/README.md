@@ -54,6 +54,12 @@ docker run --cpus=4 --rm \
 
 ## PLCg2 truncation benchmark (preprocessed trajectory)
 
+Get the data first (DOI: [10.5281/zenodo.22879722](https://doi.org/10.5281/zenodo.22879722), ~7.5GB — see `docs/data.rst`):
+
+```bash
+python scripts/fetch_zenodo_data.py --plcg2-only
+```
+
 Runs on PLCg2 AMBER inputs in `plcg2_data/` with preprocessing
 (protein-only, imaged, centered, fitted), then benchmarks 10 windows by default:
 `Full`, `Trunc1_1_1077`, `Trunc2_1_977`, ...

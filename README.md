@@ -70,6 +70,10 @@ Outputs default to `./phenom_outputs/` (or `$PHENOMS_OUTPUT_DIR`).
 
 Kernel timing (Docker, 4 CPUs, 3×250 frames, 2,722 atoms): Rust **0.047 s** vs MDTraj **0.803 s** (~17×) vs MDAnalysis **1.126 s** (~24×). Reproduce via [docker/README.md](./docker/README.md).
 
+## Validation data
+
+EGFR (WT vs. del747-749) and PLCg2 MD trajectories used to validate PHENOMS are on Zenodo: [10.5281/zenodo.22879722](https://doi.org/10.5281/zenodo.22879722) (CC0). Get them with `python scripts/fetch_zenodo_data.py` — see [docs/data.rst](./docs/data.rst) for details.
+
 ## License
 
 [MIT](./LICENSE)
