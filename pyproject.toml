@@ -33,6 +33,12 @@ dependencies = [
     "biopython>=1.79",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Popov-Lab-UNC/PHENOMS"
+Documentation = "https://popov-lab-unc.github.io/PHENOMS/"
+Repository = "https://github.com/Popov-Lab-UNC/PHENOMS"
+Issues = "https://github.com/Popov-Lab-UNC/PHENOMS/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-cov>=4.0"]
 gromacs = ["MDAnalysis>=2.4"]
