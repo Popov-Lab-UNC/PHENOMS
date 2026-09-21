@@ -47,4 +47,5 @@ At a glance
    cli
    outputs
    benchmarks
+   data
    api/index
