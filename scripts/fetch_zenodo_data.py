@@ -34,8 +34,12 @@ _EGFR_FILES = [
 _EGFR_LOCAL_NAMES = [name.removeprefix("egfr_") for name in _EGFR_FILES]
 
 _PLCG2_DIR = _REPO_ROOT / "plcg2_data"
-_PLCG2_FILES = ["plcg2_wtPLCg2.prmtop", "plcg2_wtPLCg2-1.3500ns.nc"]
-_PLCG2_LOCAL_NAMES = [name.removeprefix("plcg2_") for name in _PLCG2_FILES]
+_PLCG2_PRMTOP = ("plcg2_wtPLCg2.prmtop", "wtPLCg2.prmtop")
+# The trajectory exceeded what a single upload to Zenodo's bucket API could
+# reliably complete (large uploads were failing with a proxy timeout), so
+# it's stored as 15 sequential 500MB parts and reassembled here.
+_PLCG2_NC_PARTS = [f"plcg2_wtPLCg2-1.3500ns.nc.part{i:02d}" for i in range(15)]
+_PLCG2_NC_LOCAL_NAME = "wtPLCg2-1.3500ns.nc"
 
 
 def _download(remote_name: str, local_path: Path) -> None:
@@ -62,8 +66,26 @@ def main() -> int:
 
     if not args.egfr_only:
         print("PLCg2, ~7.5GB total:")
-        for remote, local in zip(_PLCG2_FILES, _PLCG2_LOCAL_NAMES):
-            _download(remote, _PLCG2_DIR / local)
+        prmtop_remote, prmtop_local = _PLCG2_PRMTOP
+        _download(prmtop_remote, _PLCG2_DIR / prmtop_local)
+
+        nc_path = _PLCG2_DIR / _PLCG2_NC_LOCAL_NAME
+        if nc_path.exists():
+            print(f"  skip (already present): {nc_path}")
+        else:
+            part_paths = []
+            for i, remote in enumerate(_PLCG2_NC_PARTS):
+                part_path = _PLCG2_DIR / f".{_PLCG2_NC_LOCAL_NAME}.part{i:02d}"
+                _download(remote, part_path)
+                part_paths.append(part_path)
+            print(f"  reassembling {len(part_paths)} parts -> {nc_path}")
+            with open(nc_path, "wb") as out:
+                for part_path in part_paths:
+                    with open(part_path, "rb") as part:
+                        while chunk := part.read(1024 * 1024):
+                            out.write(chunk)
+            for part_path in part_paths:
+                part_path.unlink()
 
     print("Done.")
     return 0
