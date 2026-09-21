@@ -89,7 +89,7 @@ html_show_sourcelink = False
 
 html_theme_options = {
     "accent_color": "violet",
-    "github_url": "https://github.com/Brandon-Cole/PHENOMS",
+    "github_url": "https://github.com/Popov-Lab-UNC/PHENOMS",
     "globaltoc_expand_depth": 1,
     "nav_links": [
         {"title": "Installation", "url": "installation"},
@@ -102,8 +102,8 @@ html_theme_options = {
 
 html_context = {
     "source_type": "github",
-    "source_user": "Brandon-Cole",
+    "source_user": "Popov-Lab-UNC",
     "source_repo": "PHENOMS",
-    "source_version": "API_and_docs",
+    "source_version": "main",
     "source_docs_path": "/docs/",
 }

@@ -4,7 +4,7 @@ Python-based Hydrogen-Deuterium Exchange of Molecular Dynamics Simulations
 
 ![PHENOMS workflow](./assets/phenoms.png)
 
-**Documentation:** [https://brandon-cole.github.io/PHENOMS/](https://brandon-cole.github.io/PHENOMS/)
+**Documentation:** [https://popov-lab-unc.github.io/PHENOMS/](https://popov-lab-unc.github.io/PHENOMS/)
 
 PHENOMS analyzes backbone H-bond networks from MD trajectories for HDX-MS–style interpretation: Rust-accelerated Baker–Hubbard detection, replicate/`ComparisonSet` workflows, occupancy heatmaps, differential protection, and connectivity exports. Backbone N–O is the default; all-bond mode and native traj+topology inputs are optional.
 
@@ -35,7 +35,7 @@ GROMACS `.tpr` topologies require the optional `MDAnalysis` dependency:
 `pip install -e ".[gromacs]"` when building from source (or
 `pip install "phenoms[gromacs]"` if you installed from PyPI). Every other
 topology format (`.gro`, `.pdb`, `.prmtop`, …) needs no extra — see
-[Inputs](https://brandon-cole.github.io/PHENOMS/usage.html#inputs) for the
+[Inputs](https://popov-lab-unc.github.io/PHENOMS/usage.html#inputs) for the
 full file-type breakdown by engine.
 
 ## Quick start
@@ -62,7 +62,7 @@ cmp.compare()
 # structure-colored PDB the same way — same output_dir=/False controls apply.
 ```
 
-CLI (optional): `phenoms prep`, `phenoms run`, `phenoms compare` — see the [docs](https://brandon-cole.github.io/PHENOMS/).
+CLI (optional): `phenoms prep`, `phenoms run`, `phenoms compare` — see the [docs](https://popov-lab-unc.github.io/PHENOMS/).
 
 Outputs default to `./phenom_outputs/` (or `$PHENOMS_OUTPUT_DIR`).
 

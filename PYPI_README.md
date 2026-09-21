@@ -20,7 +20,7 @@ pip install "phenoms[gromacs]"
 
 Every other supported format (`.gro`/`.pdb` topologies, OpenMM `.dcd`, AMBER
 `.nc`/`.prmtop`, multi-frame PDBs) works with the plain install above — see
-the [Inputs docs](https://brandon-cole.github.io/PHENOMS/usage.html#inputs)
+the [Inputs docs](https://popov-lab-unc.github.io/PHENOMS/usage.html#inputs)
 for the full file-type breakdown.
 
 ## Quick start
@@ -38,7 +38,7 @@ sim.run()
 
 A CLI is also available: `phenoms prep`, `phenoms run`, `phenoms compare`.
 
-**Docs:** https://brandon-cole.github.io/PHENOMS/
+**Docs:** https://popov-lab-unc.github.io/PHENOMS/
 **Source:** https://github.com/Brandon-Cole/PHENOMS
 
 ## License
