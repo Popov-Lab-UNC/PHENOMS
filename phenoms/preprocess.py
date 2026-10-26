@@ -130,49 +130,26 @@ def discover_replicate_dirs(input_dir: str | Path) -> list[Path]:
     return reps
 
 
-def _load_rep(rep: ReplicateInput):
+def _iterload_rep_chunks(rep: ReplicateInput, *, chunk_size: int):
+    """
+    Yield the replicate's trajectory in chunks (``mdtraj.iterload``) instead
+    of loading it in one shot, so the raw file -- usually the largest
+    trajectory a user has, since it's read before any frame_dt_ps thinning --
+    never has to be held in memory in full.
+    """
     if rep.topology_path is None:
-        return md.load(str(rep.trajectory_path))
+        yield from md.iterload(str(rep.trajectory_path), chunk=chunk_size)
+        return
 
     if rep.topology_path.suffix.lower() == ".tpr":
         converted = tpr_to_mdtraj_topology(rep.topology_path, rep.trajectory_path)
         try:
-            return md.load(str(rep.trajectory_path), top=str(converted))
+            yield from md.iterload(str(rep.trajectory_path), top=str(converted), chunk=chunk_size)
         finally:
             converted.unlink(missing_ok=True)
+        return
 
-    return md.load(str(rep.trajectory_path), top=str(rep.topology_path))
-
-
-def _select_frames_by_time_ps(traj, start_ps: float | None, end_ps: float | None, frame_dt_ps: float | None):
-    mask = None
-    if start_ps is not None:
-        m = traj.time >= float(start_ps)
-        mask = m if mask is None else (mask & m)
-    if end_ps is not None:
-        m = traj.time <= float(end_ps)
-        mask = m if mask is None else (mask & m)
-
-    if mask is None:
-        idx = list(range(traj.n_frames))
-    else:
-        idx = [i for i, keep in enumerate(mask) if bool(keep)]
-
-    if not idx:
-        raise ValueError("No frames selected after start/end filtering.")
-
-    if frame_dt_ps is not None:
-        t0 = traj.time[idx[0]]
-        step = float(frame_dt_ps)
-        picked = [idx[0]]
-        last_t = t0
-        for i in idx[1:]:
-            ti = traj.time[i]
-            if ti >= last_t + step - 1e-9:
-                picked.append(i)
-                last_t = ti
-        idx = picked
-    return idx
+    yield from md.iterload(str(rep.trajectory_path), top=str(rep.topology_path), chunk=chunk_size)
 
 
 def normalize_replicate_to_pdb(
@@ -185,32 +162,64 @@ def normalize_replicate_to_pdb(
     apply_imaging: bool = True,
     center: bool = True,
     fit: bool = True,
+    chunk_size: int = 1000,
 ) -> Path:
     """
     Normalize one replicate:
     image/unwrap (best-effort) -> center -> fit -> protein-only -> save PDB.
+
+    Streams the raw trajectory in chunks instead of loading it whole: each
+    chunk is protein-sliced, imaged, and centered as it arrives, and only
+    frames that pass ``start_ps``/``end_ps``/``frame_dt_ps`` filtering are
+    ever kept in memory. ``fit`` superposes every frame against frame 0 of
+    the raw stream as it's processed, matching the reference used when the
+    whole trajectory was loaded at once -- since superposition is a
+    per-frame operation, doing it per-chunk against that one persisted
+    reference frame produces identical coordinates to fitting the full
+    trajectory first and thinning afterward.
     """
-    traj = _load_rep(replicate)
-    protein_idx = traj.topology.select("protein")
-    if len(protein_idx) > 0:
-        traj = traj.atom_slice(protein_idx)
+    protein_idx = None
+    reference_frame = None
+    kept_frames: list = []
+    last_kept_t: float | None = None
 
-    if apply_imaging:
-        try:
-            traj.image_molecules(inplace=True)
-        except Exception:
-            # Best effort only; fallback keeps trajectory usable.
-            pass
+    for chunk in _iterload_rep_chunks(replicate, chunk_size=chunk_size):
+        if protein_idx is None:
+            protein_idx = chunk.topology.select("protein")
+        if len(protein_idx) > 0:
+            chunk = chunk.atom_slice(protein_idx)
 
-    if center:
-        traj.center_coordinates()
+        if apply_imaging:
+            try:
+                chunk.image_molecules(inplace=True)
+            except Exception:
+                # Best effort only; fallback keeps the chunk usable.
+                pass
 
-    if fit and traj.n_frames > 1:
-        atom_idx = list(range(traj.n_atoms))
-        traj.superpose(traj, frame=0, atom_indices=atom_idx)
+        if center:
+            chunk.center_coordinates()
 
-    frame_idx = _select_frames_by_time_ps(traj, start_ps=start_ps, end_ps=end_ps, frame_dt_ps=frame_dt_ps)
-    traj = traj.slice(frame_idx)
+        if reference_frame is None:
+            reference_frame = chunk.slice(0)
+
+        if fit:
+            chunk.superpose(reference_frame, frame=0, atom_indices=list(range(chunk.n_atoms)))
+
+        for i in range(chunk.n_frames):
+            t = float(chunk.time[i])
+            if start_ps is not None and t < start_ps:
+                continue
+            if end_ps is not None and t > end_ps:
+                continue
+            if frame_dt_ps is not None and last_kept_t is not None and t < last_kept_t + float(frame_dt_ps) - 1e-9:
+                continue
+            kept_frames.append(chunk.slice(i))
+            last_kept_t = t
+
+    if not kept_frames:
+        raise ValueError("No frames selected after start/end/frame_dt filtering.")
+
+    traj = kept_frames[0] if len(kept_frames) == 1 else md.join(kept_frames)
 
     out = Path(out_pdb_path).expanduser().resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
