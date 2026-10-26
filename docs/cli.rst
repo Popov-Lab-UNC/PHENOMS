@@ -22,6 +22,11 @@ Normalize GROMACS / OpenMM / AMBER replicate folders to multi-frame PDBs
 
 Flags: ``--no-imaging``, ``--no-center``, ``--no-fit``.
 
+The raw trajectory (before ``--frame-dt-ps`` thinning) is read in streamed
+chunks rather than loaded whole, since it's usually the largest file a user
+has — this avoids OOM on long production runs regardless of how small the
+final, thinned output ends up being.
+
 ``phenoms run``
 ---------------
 
