@@ -72,8 +72,10 @@ class SimulationSet:
             mean ± std across replicates; used for bar plots and aggregated heatmap.
         output_dir : str, pathlib.Path, False, or None
             Where the standard artifact bundle (per-replicate CSVs, manifest,
-            heatmap/statistics plots, and a structure-colored reference PDB) is
-            written after a successful :meth:`run`. ``None`` (default) creates a
+            heatmap/statistics plots, a structure-colored reference PDB plus a
+            standalone HTML viewer for it, and an interactive HTML residue
+            connectivity graph) is written after a successful :meth:`run`.
+            ``None`` (default) creates a
             fresh timestamped directory under :func:`phenoms.default_output_root`
             so a run always leaves output behind without naming a path. Pass an
             explicit path to control the location, or ``False`` to disable all
@@ -290,8 +292,9 @@ class SimulationSet:
         Write the standard artifact bundle to ``self.output_dir``: raw/occupancy/
         pivot CSVs and a manifest (:meth:`export_run_artifacts`), per-replicate
         and aggregated heatmaps, bond-statistics bar plots (if
-        ``bond_statistics_threshold`` was set), and a structure-colored
-        reference PDB (see :meth:`_write_default_structure_bfactors`).
+        ``bond_statistics_threshold`` was set), a structure-colored reference
+        PDB plus a standalone HTML viewer for it, and an interactive HTML
+        residue connectivity graph (:meth:`export_connectivity_graph_html`).
         """
         self.export_run_artifacts(self.output_dir)
         plots_dir = self.output_dir / "plots"
@@ -303,7 +306,17 @@ class SimulationSet:
                 save_lifetime_path=str(plots_dir / "bond_lifetimes.png"),
                 save_break_path=str(plots_dir / "break_frequencies.png"),
             )
-        self._write_default_structure_bfactors(self.output_dir / "structure_bfactors.pdb")
+        bfactor_pdb = self.output_dir / "structure_bfactors.pdb"
+        self._write_default_structure_bfactors(bfactor_pdb)
+
+        from phenoms.viewer_bfactor_html import export_bfactor_colored_pdb_viewer_html
+
+        export_bfactor_colored_pdb_viewer_html(
+            bfactor_pdb,
+            self.output_dir / "structure_bfactors_viewer.html",
+            title="H-bond occupancy variance (colored by B-factor)",
+        )
+        self.export_connectivity_graph_html(self.output_dir / "connectivity_graph.html")
 
     def _resolve_reference_pdb(self, extra_output_dir):
         """
@@ -599,3 +612,45 @@ class SimulationSet:
             self._pivot_tables, metric=metric, donor_aggregation="sum"
         )
         write_pdb_bfactors(pdb_path, donor_df, output_path, value_column="Average")
+
+    def export_connectivity_graph_html(
+        self,
+        output_html_path,
+        *,
+        top_k_edges: int = 30,
+        min_abs_edge_delta: float | None = None,
+        directed: bool = False,
+        title: str | None = None,
+    ) -> None:
+        """
+        Export an interactive HTML residue connectivity graph from this set's
+        own H-bond occupancy (edges sized by occupancy, no second condition
+        needed). For a two-condition delta graph, use
+        :meth:`~phenoms.ComparisonSet.export_connectivity_graph_html` instead.
+        """
+        if not self._pivot_tables:
+            raise ValueError("No data. Run .run() first.")
+        from phenoms.connectivity import (
+            bond_occupancy_from_pivot_tables,
+            build_residue_graph_from_bond_deltas,
+            export_residue_graph_html,
+        )
+
+        unified = self.get_plot_bond_labels_sorted()
+        pivots = self.get_plot_pivot_tables()
+        if title is None:
+            title = "Residue H-bond connectivity (occupancy)"
+        bond_values = bond_occupancy_from_pivot_tables(pivots, unified)
+        graph = build_residue_graph_from_bond_deltas(
+            bond_values,
+            top_k_edges=top_k_edges,
+            min_abs_edge_delta=min_abs_edge_delta,
+            directed=directed,
+        )
+        export_residue_graph_html(
+            graph,
+            output_html_path,
+            title=title,
+            directed=directed,
+            show_delta_legend=False,
+        )

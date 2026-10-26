@@ -26,9 +26,10 @@ class ComparisonSet:
             Column names / plot labels for the two sets.
         output_dir : str, pathlib.Path, False, or None
             Where the standard comparison bundle (comparison CSV, manifest,
-            difference plot, aligned heatmaps, and a differential
-            structure-colored PDB) is written after a successful
-            :meth:`compare`. ``None`` (default) creates a fresh timestamped
+            difference plot, aligned heatmaps, a differential
+            structure-colored PDB plus a standalone HTML viewer for it, and
+            an interactive HTML residue connectivity Δ graph) is written
+            after a successful :meth:`compare`. ``None`` (default) creates a fresh timestamped
             directory under :func:`phenoms.default_output_root`, matching
             :class:`~phenoms.SimulationSet`. Pass an explicit path to control
             the location, or ``False`` to disable all default output writing.
@@ -80,8 +81,10 @@ class ComparisonSet:
         """
         Write the standard comparison bundle to ``self.output_dir``:
         ``comparison.csv`` + manifest (:meth:`export_comparison_artifacts`), a
-        difference plot, aligned heatmaps for both sets, and a differential
-        structure-colored PDB (see :meth:`_write_default_structure_bfactors`).
+        difference plot, aligned heatmaps for both sets, a differential
+        structure-colored PDB plus a standalone HTML viewer for it (see
+        :meth:`_write_default_structure_bfactors`), and an interactive HTML
+        residue connectivity Δ graph (:meth:`export_connectivity_graph_html`).
         """
         self.export_comparison_artifacts(self.output_dir)
         plots_dir = self.output_dir / "plots"
@@ -90,7 +93,20 @@ class ComparisonSet:
         heatmaps_dir = plots_dir / "heatmaps"
         heatmaps_dir.mkdir(parents=True, exist_ok=True)
         self.plot_heatmaps_both(save_dir=str(heatmaps_dir))
-        self._write_default_structure_bfactors(self.output_dir / "structure_bfactors_diff.pdb")
+
+        bfactor_pdb = self.output_dir / "structure_bfactors_diff.pdb"
+        self._write_default_structure_bfactors(bfactor_pdb)
+
+        from phenoms.viewer_bfactor_html import export_bfactor_colored_pdb_viewer_html
+
+        export_bfactor_colored_pdb_viewer_html(
+            bfactor_pdb,
+            self.output_dir / "structure_bfactors_diff_viewer.html",
+            title=f"Δ H-bond occupancy ({self.label_b} vs {self.label_a}, colored by B-factor)",
+        )
+        self.export_connectivity_graph_html(
+            self.output_dir / "connectivity_graph.html", graph_mode="diff"
+        )
 
     def _write_default_structure_bfactors(self, output_path):
         """

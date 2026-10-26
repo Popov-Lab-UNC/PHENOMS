@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 import base64
-import urllib.request
-import ssl
+
+from phenoms import _html_embed
 
 
 def bfactor_min_max_from_pdb(pdb_path: str | Path) -> tuple[float, float]:
@@ -25,36 +25,6 @@ def bfactor_min_max_from_pdb(pdb_path: str | Path) -> tuple[float, float]:
     if not vals:
         return (0.0, 0.0)
     return (min(vals), max(vals))
-
-
-def _embed_js_from_url(url: str, *, timeout_s: float = 15.0) -> str:
-    """
-    Download JS and embed it as inline <script>. If download fails, return a
-    <script src=...> tag instead.
-    """
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "phenoms/1.0"})
-        with urllib.request.urlopen(req, timeout=timeout_s) as resp:
-            js_bytes = resp.read()
-        js_text = js_bytes.decode("utf-8", errors="ignore")
-        if not js_text.strip():
-            raise RuntimeError("Downloaded JS is empty")
-        return f"<script>\n{js_text}\n</script>"
-    except Exception:
-        # Retry with disabled SSL verification (some restricted environments
-        # break Python TLS trust stores; curl often works there).
-        try:
-            ctx = ssl._create_unverified_context()
-            req = urllib.request.Request(url, headers={"User-Agent": "phenoms/1.0"})
-            with urllib.request.urlopen(req, timeout=timeout_s, context=ctx) as resp:
-                js_bytes = resp.read()
-            js_text = js_bytes.decode("utf-8", errors="ignore")
-            if not js_text.strip():
-                raise RuntimeError("Downloaded JS is empty (retry)")
-            return f"<script>\n{js_text}\n</script>"
-        except Exception:
-            # Fallback to CDN; HTML still contains status/error text.
-            return f'<script src="{url}"></script>'
 
 
 def export_bfactor_colored_pdb_viewer_html(
@@ -77,7 +47,7 @@ def export_bfactor_colored_pdb_viewer_html(
     # Embed NGL JS directly so the viewer does not depend on external networks/CSP.
     # Use a stable NGL version that exists on unpkg.
     ngl_url = "https://unpkg.com/ngl@2.4.0/dist/ngl.js"
-    ngl_script_tag = _embed_js_from_url(ngl_url)
+    ngl_script_tag = _html_embed.embed_js_from_url(ngl_url)
 
     html = f"""<!doctype html>
 <html>

@@ -87,6 +87,8 @@ class TestDefaultOutputs:
             "manifest": output_dir / "manifest.json",
             "difference_plot": output_dir / "plots" / "difference.png",
             "structure_bfactors_diff": output_dir / "structure_bfactors_diff.pdb",
+            "structure_bfactors_diff_viewer_html": output_dir / "structure_bfactors_diff_viewer.html",
+            "connectivity_graph_html": output_dir / "connectivity_graph.html",
         }
 
     def _built_sets(self, kras_pdb_path):
@@ -108,6 +110,8 @@ class TestDefaultOutputs:
         comp.compare()
         for label, path in self._bundle_paths(comp.output_dir).items():
             assert path.exists(), f"missing default comparison output: {label} ({path})"
+        graph_html = (comp.output_dir / "connectivity_graph.html").read_text(encoding="utf-8")
+        assert "Edge" in graph_html  # diff-mode legend, unlike SimulationSet's occupancy-only graph
         heatmap_pngs = list((comp.output_dir / "plots" / "heatmaps").glob("*.png"))
         assert heatmap_pngs, "expected at least one aligned heatmap PNG"
 
