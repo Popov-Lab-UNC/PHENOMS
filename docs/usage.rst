@@ -90,6 +90,12 @@ yourself to get results. ``SimulationSet.run()`` writes:
   --start-ps ...``) or treat frame 0 as a coloring reference only; it has no
   effect on H-bond detection, which already ran over the full requested frame
   range.
+* ``structure_bfactors_viewer.html`` — a standalone HTML viewer for
+  ``structure_bfactors.pdb`` that renders directly in a browser (built with
+  NGL, no local software needed) — meant to make the structure result
+  immediately visible to someone who doesn't already have PyMOL/Chimera set up.
+* ``connectivity_graph.html`` — an interactive residue H-bond network, edges
+  sized by occupancy (:meth:`~phenoms.SimulationSet.export_connectivity_graph_html`).
 
 :class:`~phenoms.ComparisonSet`'s ``.compare()`` writes the equivalent bundle
 for a comparison:
@@ -102,10 +108,21 @@ for a comparison:
 * ``structure_bfactors_diff.pdb`` — colored by occupancy difference
   (``label_b`` − ``label_a``), using ``set_a``'s frame 0 as the reference
   structure (same convention as above).
+* ``structure_bfactors_diff_viewer.html`` — standalone HTML viewer for the
+  differential structure, same as above.
+* ``connectivity_graph.html`` — interactive residue Δ-occupancy network
+  (``graph_mode="diff"``), see
+  :meth:`~phenoms.ComparisonSet.export_connectivity_graph_html`.
 
-Connectivity graph HTML (:meth:`~phenoms.ComparisonSet.export_connectivity_graph_html`
-and its community-aware variant) isn't part of either default bundle — both
-need a ``graph_mode``/threshold choice, so they stay opt-in.
+Both HTML viewers embed their JS library (NGL / vis-network) from a CDN at
+export time so the file is standalone when opened later; if no network is
+available at export time, the file still gets written but falls back to
+loading that library from the CDN when you open it instead.
+
+Still opt-in (not part of either default bundle, since they need an explicit
+choice): single-condition connectivity graphs on a comparison
+(``graph_mode="set_a"``/``"set_b"``) and the community-aware variant
+(:meth:`~phenoms.ComparisonSet.export_connectivity_community_graph_html`).
 
 Where a bundle goes, by ``output_dir=`` (same for ``SimulationSet`` and
 ``ComparisonSet``):

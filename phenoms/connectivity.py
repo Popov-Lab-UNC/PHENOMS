@@ -11,10 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import base64
 import json
-import urllib.request
-import ssl
 import re
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -23,6 +20,7 @@ import pandas as pd
 import networkx as nx
 
 from phenoms.analysis import extract_residue_numbers
+from phenoms import _html_embed
 
 
 def bond_label_to_donor_acceptor_residue_numbers(bond_label: str) -> Tuple[int, int]:
@@ -542,24 +540,7 @@ def export_residue_graph_html(
 
     # Embed vis-network JS directly so the HTML doesn't depend on external networks/CSP.
     vis_url = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"
-    try:
-        req = urllib.request.Request(vis_url, headers={"User-Agent": "phenoms/1.0"})
-        with urllib.request.urlopen(req, timeout=15.0) as resp:
-            js_text = resp.read().decode("utf-8", errors="ignore")
-        if not js_text.strip():
-            raise RuntimeError("Empty vis-network JS")
-        vis_script_tag = f"<script>\n{js_text}\n</script>"
-    except Exception:
-        try:
-            ctx = ssl._create_unverified_context()
-            req = urllib.request.Request(vis_url, headers={"User-Agent": "phenoms/1.0"})
-            with urllib.request.urlopen(req, timeout=15.0, context=ctx) as resp:
-                js_text = resp.read().decode("utf-8", errors="ignore")
-            if not js_text.strip():
-                raise RuntimeError("Empty vis-network JS (retry)")
-            vis_script_tag = f"<script>\n{js_text}\n</script>"
-        except Exception:
-            vis_script_tag = f'<script src="{vis_url}"></script>'
+    vis_script_tag = _html_embed.embed_js_from_url(vis_url)
 
     # Lightweight fallback output (always visible) so results are still usable
     # if vis-network fails to render for any reason.

@@ -21,6 +21,10 @@ And directly under ``output_dir``:
 * **``structure_bfactors.pdb``** — frame-0 reference structure colored by
   per-residue H-bond variance across replicates (see :ref:`default-outputs` for
   where "frame 0" comes from on each input path)
+* **``structure_bfactors_viewer.html``** — standalone, no-install 3D viewer for
+  the same structure (opens directly in a browser; built with NGL)
+* **``connectivity_graph.html``** — interactive residue H-bond network, edges
+  sized by occupancy (:meth:`~phenoms.SimulationSet.export_connectivity_graph_html`)
 
 Differential / comparison outputs
 ---------------------------------
@@ -38,11 +42,15 @@ Differential / comparison outputs
   :meth:`~phenoms.ComparisonSet.plot_heatmaps_both`
 * **``structure_bfactors_diff.pdb``** — differential B-factors (``label_b`` −
   ``label_a``) on ``set_a``'s frame-0 reference structure
+* **``structure_bfactors_diff_viewer.html``** — standalone, no-install 3D
+  viewer for the same differential structure (built with NGL)
+* **``connectivity_graph.html``** — interactive residue Δ-occupancy network,
+  ``graph_mode="diff"`` (:meth:`~phenoms.ComparisonSet.export_connectivity_graph_html`)
 
-Opt-in only (not part of the default bundle, since they need a
-``graph_mode``/threshold choice): **Connectivity HTML** — residue graphs from
-occupancy or Δ occupancy (:meth:`~phenoms.ComparisonSet.export_connectivity_graph_html`,
-community-aware variant available).
+Opt-in only (not part of the default bundle, since they need an explicit
+choice): single-condition connectivity graphs (``graph_mode="set_a"``/``"set_b"``)
+and the community-aware variant
+(:meth:`~phenoms.ComparisonSet.export_connectivity_community_graph_html`).
 
 Default location
 ----------------

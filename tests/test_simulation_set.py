@@ -162,6 +162,8 @@ class TestDefaultOutputs:
             "manifest": output_dir / "manifest.json",
             "aggregated_heatmap": output_dir / "plots" / "aggregated_heatmap.png",
             "structure_bfactors": output_dir / "structure_bfactors.pdb",
+            "structure_bfactors_viewer_html": output_dir / "structure_bfactors_viewer.html",
+            "connectivity_graph_html": output_dir / "connectivity_graph.html",
         }
 
     def test_default_output_dir_is_timestamped_under_default_root(self, kras_pdb_path):
@@ -174,6 +176,10 @@ class TestDefaultOutputs:
         sim.run(n_jobs=1)
         for label, path in self._bundle_paths(sim.output_dir).items():
             assert path.exists(), f"missing default output: {label} ({path})"
+        viewer_html = (sim.output_dir / "structure_bfactors_viewer.html").read_text(encoding="utf-8")
+        assert "NGL" in viewer_html
+        graph_html = (sim.output_dir / "connectivity_graph.html").read_text(encoding="utf-8")
+        assert "vis-network" in graph_html
 
     def test_output_dir_false_disables_writing(self, kras_pdb_path):
         sim = SimulationSet([kras_pdb_path], sub_frames=5, output_dir=False)
